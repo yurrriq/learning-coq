@@ -1,3 +1,7 @@
+(* https://www.youtube.com/watch?v=i2Q5GJhgsjA *)
+(* https://www.youtube.com/watch?v=2SjM5f3GkV0 *)
+(* http://math.andrej.com/2011/02/22/video-tutorials-for-the-coq-proof-assistant/ *)
+
 Parameters A B C : Set.
 
 (* A function f : A * B -> C is equivalent to a function A -> (B -> C). *)
