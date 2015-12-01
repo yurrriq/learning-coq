@@ -30,3 +30,6 @@ Definition isomorphic (X Y : Set) :=
       (forall x, v (u x) = x /\ (forall y, u (v y) = y)).
 
 Theorem problem : isomorphic (A * B -> C) (A -> B -> C).
+Proof.
+  exists (fun f => fun a b => f (a, b)).
+  exists (fun g => fun p => g (fst p) (snd p)).
