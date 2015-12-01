@@ -1,0 +1,434 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t c:nil
+#+OPTIONS: creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t
+#+OPTIONS: num:t p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t
+#+OPTIONS: title:t toc:t todo:t |:t
+#+HTML_DOCTYPE: html5
+#+HTML_CONTAINER: div
+#+DESCRIPTION:
+#+KEYWORDS:
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
+#+HTML_HEAD:
+#+HTML_HEAD_EXTRA:
+#+TITLE: prod_curry
+#+SUBTITLE: Proving un/curry with Coq
+#+DATE: <2015-12-01 Tue>
+#+AUTHOR: Mo Hacker
+#+EMAIL: mohacker@Mos-MacBook-Pro
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+INFOJS_OPT:
+#+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.3.2)
+#+LATEX_HEADER:
+
+#+BEGIN_SRC emacs-lisp
+(defun org-src-font-lock-fontify-block (lang start end)
+  "Fontify code block.
+This function is called by emacs automatic fontification, as long
+as `org-src-fontify-natively' is non-nil."
+  (let ((lang-mode (org-src--get-lang-mode lang)))
+    (when (fboundp lang-mode)
+      (let ((string (buffer-substring-no-properties start end))
+            (modified (buffer-modified-p))
+            (org-buffer (current-buffer)) pos next)
+        (remove-text-properties start end '(face nil))
+        (with-current-buffer
+            (get-buffer-create
+             (concat " org-src-fontification:" (symbol-name lang-mode)))
+          (delete-region (point-min) (point-max))
+          (insert string " ") ;; so there's a final property change
+          (unless (eq major-mode lang-mode) (funcall lang-mode))
+          ;; Avoid `font-lock-ensure', which does not display fonts in
+          ;; source block.
+          (font-lock-fontify-buffer)
+          (setq pos (point-min))
+          (while (setq next (next-single-property-change pos 'face))
+            (put-text-property
+             (+ start (1- pos)) (1- (+ start next)) 'face
+             (get-text-property pos 'face) org-buffer)
+            (setq pos next))
+          ;; Addition: also copy 'composition info for prettified symbols
+          (setq pos (point-min))
+          (while (setq next (next-single-property-change pos 'composition))
+            (put-text-property
+             (+ start (1- pos)) (1- (+ start next)) 'composition
+             (get-text-property pos 'composition) org-buffer)
+            (setq pos next))
+          ;; End addition
+          )
+        (add-text-properties
+         start end
+         '(font-lock-fontified t fontified t font-lock-multiline t))
+        (set-buffer-modified-p modified)))))
+
+
+(defun org-html-fontify-code (code lang)
+  "Color CODE with htmlize library.
+CODE is a string representing the source code to colorize.  LANG
+is the language used for CODE, as a string, or nil."
+  (when code
+    (cond
+     ;; Case 1: No lang.  Possibly an example block.
+     ((not lang)
+      ;; Simple transcoding.
+      (org-html-encode-plain-text code))
+     ;; Case 2: No htmlize or an inferior version of htmlize
+     ((not (and (require 'htmlize nil t) (fboundp 'htmlize-region-for-paste)))
+      ;; Emit a warning.
+      (message "Cannot fontify src block (htmlize.el >= 1.34 required)")
+      ;; Simple transcoding.
+      (org-html-encode-plain-text code))
+     ;; Case 3: plain text explicitly set
+     ((not org-html-htmlize-output-type)
+      ;; Simple transcoding.
+      (org-html-encode-plain-text code))
+     (t
+      ;; Map language
+      (setq lang (or (assoc-default lang org-src-lang-modes) lang))
+      (let* ((lang-mode (and lang (intern (format "%s-mode" lang)))))
+        (cond
+         ;; Case 1: Language is not associated with any Emacs mode
+         ((not (functionp lang-mode))
+          ;; Simple transcoding.
+          (org-html-encode-plain-text code))
+         ;; Case 2: Default.  Fontify code.
+         (t
+          ;; htmlize
+          (setq code
+                (let ((output-type org-html-htmlize-output-type)
+                      (font-prefix org-html-htmlize-font-prefix))
+                  (with-temp-buffer
+                    ;; Switch to language-specific mode.
+                    (funcall lang-mode)
+                    (insert code)
+                    ;; Fontify buffer.
+                    (font-lock-ensure)
+                    ;; Remove formatting on newline characters.
+                    (save-excursion
+                      (let ((beg (point-min))
+                            (end (point-max)))
+                        (goto-char beg)
+                        (while (progn (end-of-line) (< (point) end))
+                          (put-text-property (point) (1+ (point)) 'face nil)
+                          (forward-char 1))))
+                    (org-src-mode)
+                    (set-buffer-modified-p nil)
+                    ;; Htmlize region.
+                    (let ((org-html-htmlize-output-type output-type)
+                          (org-html-htmlize-font-prefix font-prefix))
+                      (org-html-htmlize-region-for-paste
+                       (point-min) (point-max))))))
+          ;; Strip any enclosing <pre></pre> tags.
+          (let* ((beg (and (string-match "\\`<pre[^>]*>\n*" code) (match-end 0)))
+                 (end (and beg (string-match "</pre>\\'" code))))
+            (if (and beg end) (substring code beg end) code)))))))))
+
+;; (setq prettify-symbols-alist
+;;       '(("->"  ?→) ("<-"  ?←) ("*"  ?×)
+;;         ("<="  ?≤) (">="  ?≥) ("=>" ?⇒)
+;;         ("<>"  ?≠) ("<->" ?↔) ("|-" ?⊢)
+;;         ("\\/" ?∨) ("/\\" ?∧) ("~"  ?¬)
+;;         ("forall" ?∀)
+;;         ("exists" ?∃)
+;;         ("False"  ?⊥)
+;;         ("True"   ?⊤)))
+#+END_SRC
+
+#+RESULTS:
+: org-src-font-lock-fontify-block
+
+* Definitions
+  :PROPERTIES:
+  :session:  proving_curry_and_uncurry
+  :exports:  code
+  :tangle:   prod_curry.v
+  :END:
+First we define =prod_curry=:
+#+NAME: prod_curry
+#+BEGIN_SRC coq :exports both :results code
+Definition prod_curry {X Y Z : Type}
+  (f : X * Y -> Z) (x : X) (y : Y) : Z := f (x, y).
+#+END_SRC
+
+#+RESULTS: prod_curry
+#+BEGIN_SRC coq
+prod_curry is defined
+
+#+END_SRC
+
+Next, we define =prod_uncurry=:
+#+NAME: prod_uncurry
+#+BEGIN_SRC coq :exports both :results code
+Definition prod_uncurry {X Y Z : Type}
+  (f : X -> Y -> Z) (p : X * Y) : Z :=
+  f (fst p) (snd p).
+#+END_SRC
+
+#+RESULTS: prod_uncurry
+#+BEGIN_SRC coq
+prod_uncurry is defined
+
+#+END_SRC
+
+* Proofs
+  :PROPERTIES:
+  :session:  proving_curry_and_uncurry
+  :exports:  code
+  :tangle:   prod_curry.v
+  :padline:  no
+  :END:
+** =uncurry_curry=
+#+NAME: uncurry_curry_theorem
+#+BEGIN_SRC coq :padline yes :exports both :results code
+Theorem uncurry_curry : forall(X Y Z : Type) (f : X -> Y -> Z) x y,
+  prod_curry (prod_uncurry f) x y = f x y.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_theorem
+#+BEGIN_SRC coq
+1 subgoal
+
+  ============================
+   forall (X Y Z : Type) (f : X -> Y -> Z) (x : X) (y : Y),
+   prod_curry (prod_uncurry f) x y = f x y
+
+#+END_SRC
+
+#+NAME: uncurry_curry_proof
+#+BEGIN_SRC coq :exports both :results code
+Proof.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_proof
+#+BEGIN_SRC coq
+1 subgoal
+
+  ============================
+   forall (X Y Z : Type) (f : X -> Y -> Z) (x : X) (y : Y),
+   prod_curry (prod_uncurry f) x y = f x y
+
+#+END_SRC
+
+#+NAME: uncurry_curry_intros
+#+BEGIN_SRC coq :exports both :results code
+  intros.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_intros
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X -> Y -> Z
+  x : X
+  y : Y
+  ============================
+   prod_curry (prod_uncurry f) x y = f x y
+
+#+END_SRC
+
+#+NAME: uncurry_curry_unfold
+#+BEGIN_SRC coq :exports both :results code
+  unfold prod_curry, prod_uncurry.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_unfold
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X -> Y -> Z
+  x : X
+  y : Y
+  ============================
+   f (fst (x, y)) (snd (x, y)) = f x y
+
+#+END_SRC
+
+#+NAME: uncurry_curry_simpl
+#+BEGIN_SRC coq :exports both :results code
+  simpl.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_simpl
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X -> Y -> Z
+  x : X
+  y : Y
+  ============================
+   f x y = f x y
+
+#+END_SRC
+
+#+NAME: uncurry_curry_relfexivity
+#+BEGIN_SRC coq :exports both :results code
+  reflexivity.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_relfexivity
+#+BEGIN_SRC coq
+No more subgoals.
+
+#+END_SRC
+
+#+NAME: uncurry_curry_qed
+#+BEGIN_SRC coq :exports both :results code
+Qed.
+#+END_SRC
+
+#+RESULTS: uncurry_curry_qed
+#+BEGIN_SRC coq
+intros.
+unfold prod_curry, prod_uncurry.
+simpl.
+reflexivity.
+
+#+END_SRC
+
+** =curry_uncurry=
+#+NAME: curry_uncurry_theorem
+#+BEGIN_SRC coq :padline yes :exports both :results code
+Theorem curry_uncurry : forall(X Y Z : Type)
+  (f : (X * Y) -> Z) (p : X * Y),
+  prod_uncurry (prod_curry f) p = f p.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_theorem
+#+BEGIN_SRC coq
+1 subgoal
+
+  ============================
+   forall (X Y Z : Type) (f : X * Y -> Z) (p : X * Y),
+   prod_uncurry (prod_curry f) p = f p
+
+#+END_SRC
+
+#+NAME: curry_uncurry_proof
+#+BEGIN_SRC coq :exports both :results code
+Proof.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_proof
+#+BEGIN_SRC coq
+1 subgoal
+
+  ============================
+   forall (X Y Z : Type) (f : X * Y -> Z) (p : X * Y),
+   prod_uncurry (prod_curry f) p = f p
+
+#+END_SRC
+
+#+NAME: curry_uncurry_intros
+#+BEGIN_SRC coq :exports both :results code
+  intros.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_intros
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X * Y -> Z
+  p : X * Y
+  ============================
+   prod_uncurry (prod_curry f) p = f p
+
+#+END_SRC
+
+#+NAME: curry_uncurry_unfold
+#+BEGIN_SRC coq :exports both :results code
+  unfold prod_curry, prod_uncurry.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_unfold
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X * Y -> Z
+  p : X * Y
+  ============================
+   f (fst p, snd p) = f p
+
+#+END_SRC
+
+#+NAME: curry_uncurry_destruct
+#+BEGIN_SRC coq :exports both :results code
+  destruct p as [a b].
+#+END_SRC
+
+#+RESULTS: curry_uncurry_destruct
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X * Y -> Z
+  a : X
+  b : Y
+  ============================
+   f (fst (a, b), snd (a, b)) = f (a, b)
+
+#+END_SRC
+
+#+NAME: curry_uncurry_simpl
+#+BEGIN_SRC coq :exports both :results code
+  simpl.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_simpl
+#+BEGIN_SRC coq
+1 subgoal
+
+  X : Type
+  Y : Type
+  Z : Type
+  f : X * Y -> Z
+  a : X
+  b : Y
+  ============================
+   f (a, b) = f (a, b)
+
+#+END_SRC
+
+#+NAME: curry_uncurry_reflexivity
+#+BEGIN_SRC coq :exports both :results code
+  reflexivity.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_reflexivity
+#+BEGIN_SRC coq
+No more subgoals.
+
+#+END_SRC
+
+#+NAME: curry_uncurry_qed
+#+BEGIN_SRC coq :exports both :results code
+Qed.
+#+END_SRC
+
+#+RESULTS: curry_uncurry_qed
+#+BEGIN_SRC coq
+intros.
+unfold prod_curry, prod_uncurry.
+destruct p as (a, b).
+simpl.
+reflexivity.
+
+#+END_SRC
