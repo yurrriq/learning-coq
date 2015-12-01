@@ -4,7 +4,12 @@ Parameters A B C : Set.
 Definition curry   (f : A * B -> C) := fun a => fun b => f (a, b).
 Definition uncurry (g : A -> B -> C) := fun p => g (fst p) (snd p).
 
-Theorem attempt : forall f, uncurry (curry f) = f.
+(* "extensional equality" *)
+Theorem better : forall f a b, uncurry (curry f) (a, b) = f (a, b).
 Proof.
   intros.
   unfold curry, uncurry.
+  simpl.
+  (* auto. *)
+  reflexivity.
+Qed.
