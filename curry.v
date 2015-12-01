@@ -22,3 +22,9 @@ Proof.
   simpl.
   reflexivity.
 Qed.
+
+(* There exist bijections back and forth. *)
+Definition isomorphic (X Y : Set) :=
+  exists u : X -> Y,
+    exists v : Y -> X,
+      (forall x, v (u x) = x /\ (forall y, u (v y) = y)).
