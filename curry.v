@@ -29,7 +29,23 @@ Definition isomorphic (X Y : Set) :=
     exists v : Y -> X,
       (forall x, v (u x) = x /\ (forall y, u (v y) = y)).
 
+Axiom extensionality : forall (X Y : Set) (f g : X -> Y),
+  (forall x, f x = g x) -> f = g.
+
+(* When you see your goal is going to fall apart into several cases,
+  `split` is usually the proper tactic. *)
 Theorem problem : isomorphic (A * B -> C) (A -> B -> C).
 Proof.
-  exists (fun f => fun a b => f (a, b)).
-  exists (fun g => fun p => g (fst p) (snd p)).
+  exists curry.
+  exists uncurry.
+  split.
+  apply extensionality.
+  intros [a b].
+  apply better.
+  intro g.
+  apply extensionality.
+  intro a.
+  apply extensionality.
+  intro b.
+  apply the_other.
+Qed.
