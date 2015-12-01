@@ -13,3 +13,6 @@ Proof.
   (* auto. *)
   reflexivity.
 Qed.
+
+(* Prove that curry (uncurry g) is extensionally equivalent to g. *)
+Theorem the_other : forall g a b, curry (uncurry g) a b = g a b.
