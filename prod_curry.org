@@ -23,7 +23,7 @@
 #+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.3.2)
 #+LATEX_HEADER:
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results silent
 (defun org-src-font-lock-fontify-block (lang start end)
   "Fontify code block.
 This function is called by emacs automatic fontification, as long
@@ -136,18 +136,15 @@ is the language used for CODE, as a string, or nil."
 ;;         ("True"   ?⊤)))
 #+END_SRC
 
-#+RESULTS:
-: org-src-font-lock-fontify-block
-
 * Definitions
   :PROPERTIES:
   :session:  proving_curry_and_uncurry
   :exports:  code
-  :tangle:   prod_curry.v
+  :tangle:   no
   :END:
 First we define =prod_curry=:
 #+NAME: prod_curry
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Definition prod_curry {X Y Z : Type}
   (f : X * Y -> Z) (x : X) (y : Y) : Z := f (x, y).
 #+END_SRC
@@ -160,7 +157,7 @@ prod_curry is defined
 
 Next, we define =prod_uncurry=:
 #+NAME: prod_uncurry
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Definition prod_uncurry {X Y Z : Type}
   (f : X -> Y -> Z) (p : X * Y) : Z :=
   f (fst p) (snd p).
@@ -176,12 +173,12 @@ prod_uncurry is defined
   :PROPERTIES:
   :session:  proving_curry_and_uncurry
   :exports:  code
-  :tangle:   prod_curry.v
+  :tangle:   no
   :padline:  no
   :END:
 ** =uncurry_curry=
 #+NAME: uncurry_curry_theorem
-#+BEGIN_SRC coq :padline yes :exports both :results code
+#+BEGIN_SRC coq :padline yes :exports both :results code :tangle prod_curry.v
 Theorem uncurry_curry : forall(X Y Z : Type) (f : X -> Y -> Z) x y,
   prod_curry (prod_uncurry f) x y = f x y.
 #+END_SRC
@@ -197,7 +194,7 @@ Theorem uncurry_curry : forall(X Y Z : Type) (f : X -> Y -> Z) x y,
 #+END_SRC
 
 #+NAME: uncurry_curry_proof
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Proof.
 #+END_SRC
 
@@ -212,7 +209,7 @@ Proof.
 #+END_SRC
 
 #+NAME: uncurry_curry_intros
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   intros.
 #+END_SRC
 
@@ -232,7 +229,7 @@ Proof.
 #+END_SRC
 
 #+NAME: uncurry_curry_unfold
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   unfold prod_curry, prod_uncurry.
 #+END_SRC
 
@@ -252,7 +249,7 @@ Proof.
 #+END_SRC
 
 #+NAME: uncurry_curry_simpl
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   simpl.
 #+END_SRC
 
@@ -272,7 +269,7 @@ Proof.
 #+END_SRC
 
 #+NAME: uncurry_curry_relfexivity
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   reflexivity.
 #+END_SRC
 
@@ -283,7 +280,7 @@ No more subgoals.
 #+END_SRC
 
 #+NAME: uncurry_curry_qed
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Qed.
 #+END_SRC
 
@@ -298,7 +295,7 @@ reflexivity.
 
 ** =curry_uncurry=
 #+NAME: curry_uncurry_theorem
-#+BEGIN_SRC coq :padline yes :exports both :results code
+#+BEGIN_SRC coq :padline yes :exports both :results code :tangle prod_curry.v
 Theorem curry_uncurry : forall(X Y Z : Type)
   (f : (X * Y) -> Z) (p : X * Y),
   prod_uncurry (prod_curry f) p = f p.
@@ -315,7 +312,7 @@ Theorem curry_uncurry : forall(X Y Z : Type)
 #+END_SRC
 
 #+NAME: curry_uncurry_proof
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Proof.
 #+END_SRC
 
@@ -330,7 +327,7 @@ Proof.
 #+END_SRC
 
 #+NAME: curry_uncurry_intros
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   intros.
 #+END_SRC
 
@@ -349,7 +346,7 @@ Proof.
 #+END_SRC
 
 #+NAME: curry_uncurry_unfold
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   unfold prod_curry, prod_uncurry.
 #+END_SRC
 
@@ -368,7 +365,7 @@ Proof.
 #+END_SRC
 
 #+NAME: curry_uncurry_destruct
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   destruct p as [a b].
 #+END_SRC
 
@@ -388,7 +385,7 @@ Proof.
 #+END_SRC
 
 #+NAME: curry_uncurry_simpl
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   simpl.
 #+END_SRC
 
@@ -408,7 +405,7 @@ Proof.
 #+END_SRC
 
 #+NAME: curry_uncurry_reflexivity
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
   reflexivity.
 #+END_SRC
 
@@ -419,7 +416,7 @@ No more subgoals.
 #+END_SRC
 
 #+NAME: curry_uncurry_qed
-#+BEGIN_SRC coq :exports both :results code
+#+BEGIN_SRC coq :exports both :results code :tangle prod_curry.v
 Qed.
 #+END_SRC
 
