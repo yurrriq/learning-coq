@@ -23,7 +23,7 @@
 #+CREATOR: <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.3.2)
 #+LATEX_HEADER:
 
-#+BEGIN_SRC emacs-lisp :results silent
+#+BEGIN_SRC emacs-lisp :exports none :results silent
 (defun org-src-font-lock-fontify-block (lang start end)
   "Fontify code block.
 This function is called by emacs automatic fontification, as long
@@ -140,7 +140,6 @@ is the language used for CODE, as a string, or nil."
   :PROPERTIES:
   :session:  proving_curry_and_uncurry
   :exports:  code
-  :tangle:   no
   :END:
 First we define =prod_curry=:
 #+NAME: prod_curry
@@ -173,7 +172,6 @@ prod_uncurry is defined
   :PROPERTIES:
   :session:  proving_curry_and_uncurry
   :exports:  code
-  :tangle:   no
   :padline:  no
   :END:
 ** =uncurry_curry=
